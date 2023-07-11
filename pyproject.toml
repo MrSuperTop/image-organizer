@@ -13,7 +13,7 @@ pillow = "^9.5.0"
 send2trash = "^1.8.2"
 
 [tool.isort]
-profile = "hug"
+profile = "black"
 
 [tool.ruff]
 select = ['E', 'F', 'W', 'I', 'N', 'UP', 'E', 'W']

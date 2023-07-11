@@ -94,12 +94,10 @@ class ImageViewer(QtWidgets.QGraphicsView):
             factor = 0.8
             self._zoom -= 1
 
-        if self._zoom > 0:
-            self.scale(factor, factor)
-        elif self._zoom == 0:
+        if self._zoom == 0:
             self.fitInView()
         else:
-            self._zoom = 0
+            self.scale(factor, factor)
 
     def toggleDragMode(self) -> None:
         if self.dragMode() == QtWidgets.QGraphicsView.DragMode.ScrollHandDrag:

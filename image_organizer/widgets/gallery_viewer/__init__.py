@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from image_organizer.image_utils.load_and_resize import Dimentions, load_and_resize
 from image_organizer.image_utils.pixmap_cache import PixmapCache
 from image_organizer.utils.format_strings import format_strings
-from image_organizer.widgets.image_viewer import ImageViewer
+from image_organizer.widgets.gallery_viewer.image_viewer import ImageViewer
 
 
 # TODO: Asyncronous image loading and possibly background tasks for loading beforehand
@@ -41,7 +41,6 @@ class GalleryViewer(QWidget):
         self._layout.addLayout(self.image_layout)
         self._layout.addLayout(self.info_labels_layout)
         self.setLayout(self._layout)
-
 
     def setup_image_layout(self) -> None:
         self.image_layout = QVBoxLayout()

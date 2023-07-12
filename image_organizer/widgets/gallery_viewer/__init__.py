@@ -2,12 +2,13 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QGuiApplication, QPixmap
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from image_organizer.image_utils.load_and_resize import Dimentions, load_and_resize
 from image_organizer.image_utils.pixmap_cache import PixmapCache
 from image_organizer.utils.format_strings import format_strings
+from image_organizer.utils.wait_cursor import wait_cursor
 from image_organizer.widgets.gallery_viewer.image_viewer import ImageViewer
 
 
@@ -27,19 +28,25 @@ class GalleryViewer(QWidget):
         self._current_index = 0
         self._cache = PixmapCache()
 
-        self._layout = QVBoxLayout()
-        self.setup_image_layout()
-        self.setup_info_labels_layout()
+        self.gui()
 
         first_pixmap = self._load(self.current_image_path)
         if first_pixmap is None:
             # TODO: Error message?
-            return
+            raise Exception('Could not load the first pixmap')
 
         self._update(first_pixmap)
 
+
+    def gui(self) -> None:
+        self._layout = QVBoxLayout()
+
+        self.setup_image_layout()
+        self.setup_info_labels_layout()
+
         self._layout.addLayout(self.image_layout)
         self._layout.addLayout(self.info_labels_layout)
+
         self.setLayout(self._layout)
 
     def setup_image_layout(self) -> None:
@@ -74,12 +81,11 @@ class GalleryViewer(QWidget):
             self.is_cached = True
             return cached
 
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         pixmap = load_and_resize(image_path, self.max_dimentions)
+
         if pixmap is not None:
             self._cache.insert(image_path, pixmap)
 
-        QGuiApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
         return pixmap
 
     def _update(self, pixmap: QPixmap | None) -> None:
@@ -91,6 +97,7 @@ class GalleryViewer(QWidget):
 
             return
 
+        # FIXME: Move the labels to a separate component
         formatted_path = str(self.current_image_path.absolute())
         cached_string = '(cached)' if self.is_cached else None
         cache_size = 'Cache size: {kbytes:.2f} KBytes ({mbytes:.2f} MBytes)'.format(
@@ -123,7 +130,9 @@ class GalleryViewer(QWidget):
         if old_index == self._current_index and not force_update:
             return False
 
-        self._pixmap = self._load(self.current_image_path)
+        with wait_cursor():
+            self._pixmap = self._load(self.current_image_path)
+
         if self._pixmap is None:
             return False
 

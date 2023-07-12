@@ -11,6 +11,7 @@ python = "^3.11"
 pyqt6 = "^6.5.1"
 pillow = "^9.5.0"
 send2trash = "^1.8.2"
+sqlalchemy = "^2.0.18"
 
 [tool.isort]
 profile = "black"
@@ -18,6 +19,9 @@ profile = "black"
 [tool.ruff]
 select = ['E', 'F', 'W', 'I', 'N', 'UP', 'E', 'W']
 ignore = ['N815', 'N802']
+
+[tool.ruff.per-file-ignores]
+'image_organizer/db/__init__.py' = ["E402"]
 
 [tool.pyright]
 typeCheckingMode = "strict"

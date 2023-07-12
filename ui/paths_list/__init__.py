@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 # TODO: Better looking paths, shorten them somehow
 # TODO: Reveal in the file explorer context menu option
 
-STYLES = """
+LIST_STYLES = """
 QListWidget::item:selected {
     background-color: #219ebc;
     color: #ffffff;
@@ -48,7 +48,7 @@ class PathsList(QListWidget):
         self._context_menu = QMenu()
         self._remove_action = self._context_menu.addAction('Remove')
 
-        self.setStyleSheet(STYLES)
+        self.setStyleSheet(LIST_STYLES)
 
     def add_path(self, path: Path) -> None:
         new_item = PathListItem(path)

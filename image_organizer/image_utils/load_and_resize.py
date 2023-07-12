@@ -39,7 +39,7 @@ def load_and_resize(image_path: Path, max_dimensions: Dimentions) -> QPixmap | N
 
         if ratio != 1:
             new_size = int(width * ratio), int(height * ratio)
-            image = image.resize(new_size, Image.ANTIALIAS)
+            image = image.resize(new_size, Image.Resampling.BOX)
 
         pixmap = pil2pixmap(image)
         return pixmap

@@ -9,6 +9,7 @@ from cli.actions.accessible_directory import AccessibleDirectory
 from cli.actions.directory_or_glob import DirectoryOrGlob
 from cli.MyNamespace import MyNamespace
 from image_organizer import MainWindow
+from image_organizer.db import create_schema
 
 
 def parse_args() -> MyNamespace:
@@ -18,14 +19,15 @@ def parse_args() -> MyNamespace:
 
     ap.add_argument(
         'to_move',
-        help='The directory or a glob which specifies which files you would like to move',
+        help='The directory from which you want to move file or a glob which specifies which files you would like to move',
         type=Path,
         action=DirectoryOrGlob
     )
 
+    # TODO: Make this optional and block the button
     ap.add_argument(
         'move_to',
-        help='A directory to which the files will be moved',
+        help='The default directory to which the files will be moved',
         type=Path,
         action=AccessibleDirectory
     )
@@ -37,6 +39,8 @@ def parse_args() -> MyNamespace:
 
 
 def main():
+    create_schema()
+
     args = parse_args()
     app = QApplication(sys.argv)
 
@@ -47,7 +51,11 @@ def main():
 
     window.resize(QSize(1280, 720))
 
-    window.show()
-    app.exec()
+    try:
+        window.show()
+        app.exec()
+    finally:
+        window.clean_up()
+
 
 main()

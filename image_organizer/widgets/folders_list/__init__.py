@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Literal, final
+from typing import Literal
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from image_organizer.widgets.folders_list.paths_list import PathsList
+from ui.paths_list import PathsList
 
 
 class ForbiddenPathError(ValueError):

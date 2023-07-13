@@ -1,9 +1,17 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageOps
 from PyQt6.QtGui import QImage, QPixmap
 
-Dimentions = tuple[int, int]
+
+@dataclass(frozen=True)
+class Dimentions:
+    x: int
+    y: int
+
+    def size(self) -> tuple[int, int]:
+        return self.x, self.y
 
 
 def pil2pixmap(image: Image.Image):
@@ -34,12 +42,11 @@ def load_and_resize(image_path: Path, max_dimensions: Dimentions) -> QPixmap | N
 
     with Image.open(image_path) as image:
         width, height = image.size
-        max_width, max_height = max_dimensions
-        ratio = min(max_width / width, max_height / height)
+        ratio = min(max_dimensions.x / width, max_dimensions.y / height)
 
         if ratio != 1:
             new_size = int(width * ratio), int(height * ratio)
-            image = image.resize(new_size, Image.Resampling.BOX)
+            image = image.resize(new_size, Image.Resampling.BILINEAR)
 
         pixmap = pil2pixmap(image)
         return pixmap

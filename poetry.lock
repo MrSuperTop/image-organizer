@@ -75,6 +75,24 @@ docs = ["Sphinx", "docutils (<0.18)"]
 test = ["objgraph", "psutil"]
 
 [[package]]
+name = "isort"
+version = "5.12.0"
+description = "A Python utility / library to sort Python imports."
+category = "dev"
+optional = false
+python-versions = ">=3.8.0"
+files = [
+    {file = "isort-5.12.0-py3-none-any.whl", hash = "sha256:f84c2818376e66cf843d497486ea8fed8700b340f308f076c6fb1229dff318b6"},
+    {file = "isort-5.12.0.tar.gz", hash = "sha256:8bef7dde241278824a6d83f44a544709b065191b95b6e50894bdc722fcba0504"},
+]
+
+[package.extras]
+colors = ["colorama (>=0.4.3)"]
+pipfile-deprecated-finder = ["pip-shims (>=0.5.2)", "pipreqs", "requirementslib"]
+plugins = ["setuptools"]
+requirements-deprecated-finder = ["pip-api", "pipreqs"]
+
+[[package]]
 name = "pillow"
 version = "9.5.0"
 description = "Python Imaging Library (Fork)"
@@ -214,6 +232,18 @@ files = [
 ]
 
 [[package]]
+name = "qasync"
+version = "0.24.0"
+description = "Implementation of the PEP 3156 Event-Loop with Qt."
+category = "main"
+optional = false
+python-versions = "~=3.6"
+files = [
+    {file = "qasync-0.24.0-py3-none-any.whl", hash = "sha256:a2baba622bed24c90179faae8f902dd0d2a9b01c82342f40b1149723182e0160"},
+    {file = "qasync-0.24.0.tar.gz", hash = "sha256:e583d1c3ae20fd12e908dee358c527709b480e78d57fb72ee57a94097307d959"},
+]
+
+[[package]]
 name = "send2trash"
 version = "1.8.2"
 description = "Send file to trash natively under Mac OS X, Windows and Linux"
@@ -324,4 +354,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "46d50ecbb3d3844543cdb3f014032deeeeccc7c426eac0ede3f53a40e6b0dbf1"
+content-hash = "17733be326c447f21d60dd4dc0bb2a7473efd6e02a8bee5aeaac22d4cc33b034"

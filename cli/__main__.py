@@ -1,7 +1,10 @@
+import asyncio
+import functools
 import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
 
+import qasync
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication
 
@@ -38,24 +41,55 @@ def parse_args() -> MyNamespace:
     return nsp
 
 
-def main():
+# TODO: Move the async logic somewhere else
+async def main(app: QApplication):
     create_schema()
 
+    def close_future(
+        window: MainWindow,
+        future: asyncio.Future[None],
+        loop: asyncio.AbstractEventLoop
+    ) -> None:
+        window.clean_up()
+
+        loop.call_later(10, future.cancel)
+        future.cancel()
+
+    loop = asyncio.get_event_loop()
+    future: asyncio.Future[None]= asyncio.Future()
+
     args = parse_args()
-    app = QApplication(sys.argv)
 
     window = MainWindow(
         args.to_move,
-        args.move_to
+        args.move_to,
+        QSize(1280, 720)
     )
 
-    window.resize(QSize(1280, 720))
+    app.aboutToQuit.connect(
+        functools.partial(close_future, window, future, loop)
+    )
+
+    window.show()
 
     try:
-        window.show()
-        app.exec()
-    finally:
-        window.clean_up()
+        await future
+    except asyncio.CancelledError:
+        return True
 
 
-main()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    if sys.version_info.major == 3 and sys.version_info.minor == 11:
+
+        with qasync._set_event_loop_policy( # type: ignore
+            qasync.DefaultQEventLoopPolicy()
+        ):
+            runner = asyncio.runners.Runner()
+            try:
+                runner.run(main(app))
+            finally:
+                runner.close()
+    else:
+        qasync.run(main(app)) # type: ignore

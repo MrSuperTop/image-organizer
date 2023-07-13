@@ -13,20 +13,22 @@ class ImageViewer(QtWidgets.QGraphicsView):
         self._shown = False
         self._zoom = 0
         self._empty = True
-        self._scene = QtWidgets.QGraphicsScene(self)
 
+        self.gui()
+
+    def gui(self) -> None:
+        self._scene = QtWidgets.QGraphicsScene(self)
         self._photo = QtWidgets.QGraphicsPixmapItem()
 
-        self._text = QtWidgets.QGraphicsTextItem('No images...')
+        self._info_text = QtWidgets.QGraphicsTextItem()
 
-        self._text.hide()
-        default_font = self._text.font()
+        self._info_text.hide()
+        default_font = self._info_text.font()
         default_font.setPointSize(52)
-        self._text.setFont(default_font)
-        self._text_rect = self._text.boundingRect()
+        self._info_text.setFont(default_font)
 
         self._scene.addItem(self._photo)
-        self._scene.addItem(self._text)
+        self._scene.addItem(self._info_text)
 
         self._update_text_dimentions()
 
@@ -38,11 +40,29 @@ class ImageViewer(QtWidgets.QGraphicsView):
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 
+    @property
+    def info_text(self) -> str:
+        return self._info_text.toPlainText()
+
     def _update_text_dimentions(self):
-        self._text.setPos(
-            int(self._scene.width() / 2 - self._text_rect.width() / 2),
-            int(self._scene.height() / 2 - self._text_rect.height() / 2)
+        text_rect = self._info_text.boundingRect()
+        self._info_text.setPos(
+            int(self._scene.width() / 2 - text_rect.width() / 2),
+            int(self._scene.height() / 2 - text_rect.height() / 2)
         )
+
+    def show_info_text(self, new_string: str) -> None:
+        self._info_text.setPlainText(new_string)
+        self._update_text_dimentions()
+
+        self._shown = False
+        self._photo.hide()
+        self._info_text.show()
+
+    def hide_info_text(self) -> None:
+        self._info_text.hide()
+        self._shown = False
+        self._photo.show()
 
     def fitInView( # pyright: ignore[reportIncompatibleMethodOverride]
         self,
@@ -68,8 +88,7 @@ class ImageViewer(QtWidgets.QGraphicsView):
             self.setDragMode(QtWidgets.QGraphicsView.DragMode.ScrollHandDrag)
             self._photo.setPixmap(pixmap)
 
-            self._photo.show()
-            self._text.hide()
+            self.hide_info_text()
         else:
             self.fitInView()
 
@@ -77,8 +96,7 @@ class ImageViewer(QtWidgets.QGraphicsView):
             self.setDragMode(QtWidgets.QGraphicsView.DragMode.NoDrag)
             self._photo.setPixmap(QtGui.QPixmap())
 
-            self._photo.hide()
-            self._text.show()
+            self.show_info_text('No images...')
 
         if self._shown:
             self.fitInView()

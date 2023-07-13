@@ -7,17 +7,17 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QVBoxLayout, QWidget
 from send2trash import send2trash
 
-from image_organizer.widgets.controlled_gallery.tags_list import TagsList
+from image_organizer.widgets.taggable_folder_viewer.tags_list import TagsList
 
 if typing.TYPE_CHECKING:
 
-    from image_organizer.widgets.controlled_gallery import ControlledGallery
+    from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
 
 
 class ControlButtonsGroup(QWidget):
     def __init__(
         self,
-        connected_gallery: ControlledGallery,
+        connected_gallery: TaggableFolderViewer,
         parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)

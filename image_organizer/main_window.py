@@ -1,32 +1,41 @@
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QWidget
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QWidget
 
 from image_organizer.db import session
 from image_organizer.image_utils.find_images import find_images
-from image_organizer.widgets.controlled_gallery import ControlledGallery
+from image_organizer.image_utils.pixmap_cache import PixmapCache
 from image_organizer.widgets.folders_list import FoldersList, ForbiddenFoldersFilter
+from image_organizer.widgets.gallery import Gallery
+from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
 from ui.my_splitter import MySplitter
 
 # TODO: Implement shortcuts
+# TODO: Consider switching to PySide6
 # TODO: i18n
 # TODO: Reverse the move with ctrl+Z, move to trash confirmation
 # TODO: Refactor to use snake_case https://www.qt.io/blog/qt-for-python-6-released
 # TODO: ABC for widgets how I like it
 
 
+# TODO: Convert into a context manager
 class MainWindow(QMainWindow):
     def __init__(
         self,
-        # FIXME: Get this argument type sorted out
+        # TODO: Get this argument type sorted out or get rid of it all together by loading cwd and adding an option to open a folder
         to_move: Path | list[Path],
-        move_to: Path
-    ):
+        move_to: Path,
+        size: QSize
+    ) -> None:
         super().__init__()
+
+        self.initial_size = size
+        self.resize(size)
 
         self.to_move = to_move
         self.move_to = move_to
+        self.cache = PixmapCache()
 
         if isinstance(to_move, Path):
             self.images_paths = find_images(to_move)
@@ -35,7 +44,7 @@ class MainWindow(QMainWindow):
 
         self.gui()
 
-    def clean_up(self):
+    def clean_up(self) -> None:
         session.close_all()
 
     def gui(self) -> None:
@@ -43,8 +52,6 @@ class MainWindow(QMainWindow):
 
         self._layout = QHBoxLayout()
         self.splitter = MySplitter(Qt.Orientation.Horizontal)
-        self.splitter.setStretchFactor(0, 1)
-        self.splitter.setStretchFactor(2, 2)
 
         forbidden_folders = None
         if isinstance(self.to_move, Path) and self.to_move.is_dir():
@@ -59,14 +66,24 @@ class MainWindow(QMainWindow):
         )
 
         self.folders_list.selected_path.connect(self.move_to_change_handler)
-        self.gallery = ControlledGallery(
+
+        self.tabs = QTabWidget()
+        self.folder_viewer = TaggableFolderViewer(
             self.images_paths,
-            (1280, 720),
-            self.move_to
+            self.move_to,
+            self.cache
         )
 
+        self.tabs.addTab(self.folder_viewer, 'Viewer')
+
+        self.gallery = Gallery(self.cache)
+        self.tabs.addTab(self.gallery, 'Gallery')
+
         self.splitter.addWidget(self.folders_list)
-        self.splitter.addWidget(self.gallery)
+        self.splitter.addWidget(self.tabs)
+
+        self.splitter.setStretchFactor(0, 1)
+        self.splitter.setStretchFactor(1, 2)
 
         self._layout.addWidget(self.splitter)
 

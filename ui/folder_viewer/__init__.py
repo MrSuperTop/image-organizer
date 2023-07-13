@@ -1,42 +1,37 @@
+from asyncio import Future
 from collections.abc import Iterable
 from pathlib import Path
 
+from PyQt6 import QtGui
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QGuiApplication, QPixmap
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from image_organizer.image_utils.load_and_resize import Dimentions, load_and_resize
-from image_organizer.image_utils.pixmap_cache import PixmapCache
+from image_organizer.image_utils.load_and_resize import Dimentions
+from image_organizer.image_utils.pixmap_cache import PixmapCache, PixmapOrFuture
 from image_organizer.utils.format_strings import format_strings
-from image_organizer.utils.wait_cursor import wait_cursor
-from image_organizer.widgets.gallery_viewer.image_viewer import ImageViewer
+from ui.folder_viewer.image_viewer import ImageViewer
+
+DIMENTIONS_MULTIPLIER = 2
 
 
 # TODO: Asyncronous image loading and possibly background tasks for loading beforehand
-class GalleryViewer(QWidget):
+class FolderViewer(QWidget):
     def __init__(
         self,
         image_paths: Iterable[Path],
-        max_image_dimentions: Dimentions
+        cache: PixmapCache
     ):
         super().__init__()
 
-        self.max_dimentions = max_image_dimentions
-        self.image_paths = list(image_paths)
+        self._image_paths = list(image_paths)
 
         self.is_cached = False
         self._current_index = 0
-        self._cache = PixmapCache()
+
+        self._cache = cache
 
         self.gui()
-
-        first_pixmap = self._load(self.current_image_path)
-        if first_pixmap is None:
-            # TODO: Error message?
-            raise Exception('Could not load the first pixmap')
-
-        self._update(first_pixmap)
-
 
     def gui(self) -> None:
         self._layout = QVBoxLayout()
@@ -71,24 +66,34 @@ class GalleryViewer(QWidget):
 
     @property
     def current_image_path(self) -> Path:
-        return self.image_paths[self._current_index]
+        return self._image_paths[self._current_index]
 
-    def _load(self, image_path: Path) -> QPixmap | None:
-        cached = self._cache.get(image_path)
-        self.is_cached = False
+    def _load(self, image_path: Path) -> PixmapOrFuture:
+        scene_rect = self._viewer.rect()
+        suitable_dimentions = Dimentions(
+            int(scene_rect.width() * DIMENTIONS_MULTIPLIER),
+            int(scene_rect.height() * DIMENTIONS_MULTIPLIER)
+        )
 
-        if cached is not None:
-            self.is_cached = True
-            return cached
+        return self._cache.get_or_load(image_path, suitable_dimentions)
 
-        pixmap = load_and_resize(image_path, self.max_dimentions)
+    def _update(self, pixmap: PixmapOrFuture | None) -> None:
+        if isinstance(pixmap, Future):
+            QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            self._viewer.show_info_text('Loading...')
 
-        if pixmap is not None:
-            self._cache.insert(image_path, pixmap)
+            def done_callback(completed_future: Future[QPixmap | None]) -> None:
+                result = completed_future.result()
+                if result is None:
+                    return
 
-        return pixmap
+                self._update(result)
+                QGuiApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
 
-    def _update(self, pixmap: QPixmap | None) -> None:
+            pixmap.add_done_callback(done_callback)
+
+            return
+
         self._viewer.setPhoto(pixmap)
 
         if pixmap is None:
@@ -112,41 +117,41 @@ class GalleryViewer(QWidget):
             )
         )
 
-        image_number_text = f'{self._current_index + 1} / {len(self.image_paths)}'
+        image_number_text = f'{self._current_index + 1} / {len(self._image_paths)}'
         self.image_number_label.setText(image_number_text)
 
-    def switch_image(self, move_by: int, force_update: bool = False) -> bool:
-        if len(self.image_paths) == 0:
+    def switch_image(self, move_by: int, force_update: bool = False) -> None:
+        if len(self._image_paths) == 0:
             self._update(None)
-
-            return True
+            return
 
         old_index = self._current_index
         self._current_index = max(
-            min(len(self.image_paths) - 1, self._current_index + move_by),
+            min(len(self._image_paths) - 1, self._current_index + move_by),
             0
         )
 
         if old_index == self._current_index and not force_update:
-            return False
+            return
 
-        with wait_cursor():
-            self._pixmap = self._load(self.current_image_path)
+        loaded = self._load(self.current_image_path)
+        self._update(loaded)
 
-        if self._pixmap is None:
-            return False
 
-        self._update(self._pixmap)
-        return True
+    def next(self) -> None:
+        self.switch_image(1)
 
-    def next(self) -> bool:
-        return self.switch_image(1)
-
-    def prev(self) -> bool:
-        return self.switch_image(-1)
+    def prev(self) -> None:
+        self.switch_image(-1)
 
     def clear_and_switch(self) -> None:
         self._cache.delete(self.current_image_path)
-        del self.image_paths[self._current_index]
+        del self._image_paths[self._current_index]
 
         self.switch_image(0, force_update=True)
+
+    def showEvent(self, a0: QtGui.QShowEvent):
+        first_pixmap = self._load(self.current_image_path)
+        self._update(first_pixmap)
+
+        super().showEvent(a0)

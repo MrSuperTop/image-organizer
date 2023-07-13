@@ -11,13 +11,13 @@ from image_organizer.db.models.tag import Tag
 from ui.entry_list import EntryList
 
 if typing.TYPE_CHECKING:
-    from image_organizer.widgets.controlled_gallery import ControlledGallery
+    from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
 
 
 class TagsList(EntryList):
     def __init__(
         self,
-        connected_gallery: ControlledGallery,
+        connected_gallery: TaggableFolderViewer,
         parent: QWidget | None = None
     ) -> None:
         distinct_tags_query = select(Tag.name).distinct()
@@ -100,5 +100,4 @@ class TagsList(EntryList):
 
         self.current_image.tags.append(new_tag)
         session.commit()
-
 

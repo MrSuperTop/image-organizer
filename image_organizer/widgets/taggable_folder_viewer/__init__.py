@@ -10,6 +10,7 @@ from image_organizer.image_utils.pixmap_cache import PixmapCache, PixmapOrFuture
 from image_organizer.widgets.taggable_folder_viewer.control_buttons_group import (
     ControlButtonsGroup,
 )
+from image_organizer.widgets.taggable_folder_viewer.tags_list import TagsList
 from ui.folder_viewer import FolderViewer
 
 
@@ -39,6 +40,10 @@ class TaggableFolderViewer(FolderViewer):
         )
 
         self._layout.addWidget(self.control_buttons)
+
+    @property
+    def tags_list(self) -> TagsList:
+        return self.control_buttons.tags_list
 
     # TODO: Consider implementing this into the FolderViewer
     def set_images(self, paths: Iterable[Path]) -> None:

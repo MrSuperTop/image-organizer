@@ -2,7 +2,7 @@ from asyncio.futures import Future
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QLabel, QSizePolicy, QStackedLayout, QWidget
+from PyQt6.QtWidgets import QLabel, QStackedLayout, QWidget
 
 from image_organizer.db.models.image import Image
 from image_organizer.image_utils.load_and_resize import Dimentions

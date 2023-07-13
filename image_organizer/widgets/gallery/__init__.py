@@ -4,7 +4,14 @@ from collections.abc import Sequence
 from typing import Final
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 from sqlalchemy import select
 
 from image_organizer.db import session
@@ -13,21 +20,26 @@ from image_organizer.db.models.tag import Tag
 from image_organizer.image_utils.load_and_resize import Dimentions
 from image_organizer.image_utils.pixmap_cache import PixmapCache
 from image_organizer.widgets.gallery.gallery_image import GalleryImage
+from image_organizer.widgets.taggable_folder_viewer.tags_list import TagsList
 
 DESIRED_WIDTH = 3
 IMAGE_HEIGTH_TO_WIDTH_RATION: Final[float] = 9 / 16
+EVERYTHING_VARIANT = 'All images'
 
 class Gallery(QWidget):
     def __init__(
         self,
         cache: PixmapCache,
+        tags_list: TagsList,
         default_tag: Tag | None = None,
         parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
 
-        self.grid_width = DESIRED_WIDTH
-        image_width = self.width() // self.grid_width
+        tags_list.new_tag_added.connect(self._new_tag_added_handler)
+
+        self.preferred_grid_width = DESIRED_WIDTH
+        image_width = self.width() // self.preferred_grid_width
         self.image_dimetions = Dimentions(
             image_width,
             int(image_width * IMAGE_HEIGTH_TO_WIDTH_RATION)
@@ -35,10 +47,17 @@ class Gallery(QWidget):
 
         self.cache = cache
         self._image_containers: list[GalleryImage] = []
+        self._column_layouts: list[QVBoxLayout] = []
 
         self.gui()
 
-        asyncio.ensure_future(self.update_images(default_tag))
+        self.tag_names = [EVERYTHING_VARIANT, *Tag.distinct_tag_names(session)]
+        for name in self.tag_names:
+            self.tags_selector.addItem(name)
+
+        default_tag_name = getattr(default_tag, 'name', EVERYTHING_VARIANT)
+        self.selected_tag_name = default_tag_name
+        self.update_images(default_tag_name)
 
     def gui(self) -> None:
         self._layout = QVBoxLayout()
@@ -49,46 +68,73 @@ class Gallery(QWidget):
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout()
 
-        self.label = QLabel('Images')
+        tags_selector_layout = QVBoxLayout()
+        self.tags_label = QLabel('Select tag')
+        self.tags_selector = QComboBox()
+        self.tags_selector.activated.connect(self._tag_change_handler)
 
-        # TODO: Consider this https://doc.qt.io/qtforpython-6/examples/example_widgets_layouts_flowlayout.html
+        tags_selector_layout.addWidget(self.tags_label)
+        tags_selector_layout.addWidget(self.tags_selector)
+
+        gallery_layout = QVBoxLayout()
+        self.images_label = QLabel('Images')
+
+        # TODO: Consider this https://doc.qt.io/qtforpython-6/examples/example_widgets_layouts_flowlayout.html or come up with own solution
         self.images_grid = QHBoxLayout()
         self.images_grid.addStretch()
+        self.images_grid.addStretch()
 
-        scroll_layout.addWidget(self.label)
-        scroll_layout.addLayout(self.images_grid)
+        gallery_layout.addWidget(self.images_label)
+        gallery_layout.addLayout(self.images_grid)
 
-        self.setLayout(self._layout)
+        scroll_layout.addLayout(tags_selector_layout)
+        scroll_layout.addLayout(gallery_layout)
 
         scroll_content.setLayout(scroll_layout)
         self.scroll_area.setWidget(scroll_content)
         self._layout.addWidget(self.scroll_area)
 
-    async def update_images(self, tag: Tag | None) -> None:
-        if tag is None:
+        self.setLayout(self._layout)
+
+    async def _update_images(self, tag_name: str) -> None:
+        # TODO: Make this a little bit more secure, user can just create the same tag
+        if tag_name == EVERYTHING_VARIANT:
             images_query = select(Image)
         else:
             images_query = select(Image) \
                 .join(Tag, Tag.image_id == Image.id) \
-                .where(Tag.id == tag.id)
+                .where(Tag.name == tag_name)
 
         self.images: Sequence[Image] = session.scalars(images_query).all()
 
-        rows_number = len(self.images) // self.grid_width + 1
+        # FIXME: Start reusing the old containers and layouts
+        for container in self._image_containers:
+            container.deleteLater()
+
+        for layout in self._column_layouts:
+            layout.deleteLater()
+
+        self._image_containers = []
+        self._column_layouts = []
+
+        colums_number = min(self.preferred_grid_width, len(self.images))
+        rows_number = len(self.images) // colums_number + 1 if len(self.images) > colums_number else 1
         images_iter = iter(self.images)
         containers_iter = iter(self._image_containers)
         tasks: list[Task[None]] = []
 
         # TODO: Make the number of images in each row variable with scaling
-        for _ in range(self.grid_width):
+        for _ in range(colums_number):
             column_layout = QVBoxLayout()
             column_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            self._column_layouts.append(column_layout)
 
             for _ in range(rows_number):
                 try:
                     next_container = next(containers_iter)
                 except StopIteration:
                     next_container = GalleryImage(self.image_dimetions, self.cache)
+                    self._image_containers.append(next_container)
 
                 try:
                     # TODO: Load in only the images which are in the view or are close to the user view
@@ -103,6 +149,20 @@ class Gallery(QWidget):
 
                 column_layout.addWidget(next_container)
 
-            self.images_grid.addLayout(column_layout)
+            self.images_grid.insertLayout(self.images_grid.count() - 1, column_layout)
 
-        self.images_grid.addStretch()
+    def update_images(self, tag_name: str) -> None:
+        asyncio.ensure_future(self._update_images(tag_name))
+
+    def _tag_change_handler(self, tag_index: int) -> None:
+        new_tag_name = self.tag_names[tag_index]
+
+        if new_tag_name == self.selected_tag_name:
+            return
+
+        self.update_images(new_tag_name)
+        self.selected_tag_name = new_tag_name
+
+    def _new_tag_added_handler(self, new_tag: str) -> None:
+        self.tag_names.append(new_tag)
+        self.tags_selector.addItem(new_tag)

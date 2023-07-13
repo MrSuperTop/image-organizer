@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import typing
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import select
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 from sqlalchemy.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.types import Boolean, String
 
@@ -27,3 +28,11 @@ class Tag(Base):
     __table_args__ = (
         UniqueConstraint('image_id', 'name', name='_unique_image_pair'),
     )
+
+    @classmethod
+    def distinct_tag_names(cls, session: Session) -> list[str]:
+        distinct_tags_query = select(cls.name).distinct()
+        distinct_names_rows = session.execute(distinct_tags_query)
+        distinct_names: list[str] = list(map(lambda row: row[0], distinct_names_rows))
+
+        return distinct_names

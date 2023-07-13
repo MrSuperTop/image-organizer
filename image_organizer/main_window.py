@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
 
         self.tabs.addTab(self.folder_viewer, 'Viewer')
 
-        self.gallery = Gallery(self.cache)
+        self.gallery = Gallery(self.cache, self.folder_viewer.tags_list)
         self.tabs.addTab(self.gallery, 'Gallery')
 
         self.splitter.addWidget(self.folders_list)

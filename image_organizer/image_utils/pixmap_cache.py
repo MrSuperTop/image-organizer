@@ -3,7 +3,6 @@ from asyncio import Future
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from time import sleep
 from typing import Concatenate, ParamSpec, TypeVar
 
 from PyQt6.QtGui import QPixmap, QPixmapCache

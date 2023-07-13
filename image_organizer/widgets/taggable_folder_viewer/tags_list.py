@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QLabel, QListWidget, QListWidgetItem, QWidget
 from sqlalchemy import select
 
@@ -15,18 +16,15 @@ if typing.TYPE_CHECKING:
 
 
 class TagsList(EntryList):
+    new_tag_added = pyqtSignal(str)
+
     def __init__(
         self,
-        connected_gallery: TaggableFolderViewer,
+        connected_viewer: TaggableFolderViewer,
         parent: QWidget | None = None
     ) -> None:
-        distinct_tags_query = select(Tag.name).distinct()
-        distinct_tags = session.execute(distinct_tags_query)
-        tags: list[str] = list(map(lambda row: row[0], distinct_tags))
-
-
-        self.tags = tags
-        self.gallery = connected_gallery
+        self.tags = Tag.distinct_tag_names(session)
+        self.viewer = connected_viewer
         self.current_image: Image
 
         super().__init__(
@@ -41,7 +39,7 @@ class TagsList(EntryList):
 
         super().gui(self.label, *before_widgets)
 
-        self.gallery.image_changed.connect(self._image_change_handler)
+        self.viewer.image_changed.connect(self._image_change_handler)
         self.list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
 
     def _add_handler(self) -> None:
@@ -59,6 +57,7 @@ class TagsList(EntryList):
         session.commit()
 
         self.tags.append(new_tag.name)
+        self.new_tag_added.emit(new_tag.name)
 
         super()._add_handler()
 
@@ -100,4 +99,3 @@ class TagsList(EntryList):
 
         self.current_image.tags.append(new_tag)
         session.commit()
-

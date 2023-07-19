@@ -5,21 +5,22 @@ from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QWidget
 
 from image_organizer.db import session
 from image_organizer.image_utils.find_images import find_images
-from image_organizer.image_utils.pixmap_cache import PixmapCache
+from image_organizer.pixmap_cache import PixmapCache
 from image_organizer.widgets.folders_list import FoldersList, ForbiddenFoldersFilter
 from image_organizer.widgets.gallery import Gallery
 from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
 from ui.my_splitter import MySplitter
 
-# TODO: Implement shortcuts
-# TODO: Consider switching to PySide6
+# TODO: Implement shortcuts for movement, ctrl + z, etc.
+# TODO: Menu actions for opening a new folder or glob
 # TODO: i18n
-# TODO: Reverse the move with ctrl+Z, move to trash confirmation
 # TODO: Refactor to use snake_case https://www.qt.io/blog/qt-for-python-6-released
 # TODO: ABC for widgets how I like it
+# TODO: Option to move tagged files into individual folder
+# TODO: Option to copy a filder instead of moving it
+# TODO: Option for recusrsively going through the file tree
 
 
-# TODO: Convert into a context manager
 class MainWindow(QMainWindow):
     def __init__(
         self,

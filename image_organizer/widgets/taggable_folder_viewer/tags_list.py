@@ -15,6 +15,7 @@ if typing.TYPE_CHECKING:
     from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
 
 
+# TODO: Sort the tags in the order of popularity
 class TagsList(EntryList):
     new_tag_added = pyqtSignal(str)
 

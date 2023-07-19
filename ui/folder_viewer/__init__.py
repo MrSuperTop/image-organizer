@@ -8,14 +8,13 @@ from PyQt6.QtGui import QGuiApplication, QPixmap
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from image_organizer.image_utils.load_and_resize import Dimentions
-from image_organizer.image_utils.pixmap_cache import PixmapCache, PixmapOrFuture
+from image_organizer.pixmap_cache import PixmapCache, PixmapOrFuture
 from image_organizer.utils.format_strings import format_strings
 from ui.folder_viewer.image_viewer import ImageViewer
 
-DIMENTIONS_MULTIPLIER = 2
+DIMENTIONS_MULTIPLIER = 4
 
 
-# TODO: Asyncronous image loading and possibly background tasks for loading beforehand
 class FolderViewer(QWidget):
     def __init__(
         self,
@@ -26,6 +25,7 @@ class FolderViewer(QWidget):
 
         self._image_paths = list(image_paths)
 
+        self._first_show = True
         self.is_cached = False
         self._current_index = 0
 
@@ -69,13 +69,17 @@ class FolderViewer(QWidget):
         return self._image_paths[self._current_index]
 
     def _load(self, image_path: Path) -> PixmapOrFuture:
-        scene_rect = self._viewer.rect()
+        scene_rect = self.rect()
         suitable_dimentions = Dimentions(
             int(scene_rect.width() * DIMENTIONS_MULTIPLIER),
             int(scene_rect.height() * DIMENTIONS_MULTIPLIER)
         )
 
-        return self._cache.get_or_load(image_path, suitable_dimentions)
+        return self._cache.get_or_load_pixmap(
+            image_path,
+            suitable_dimentions
+        )
+
 
     def _update(self, pixmap: PixmapOrFuture | None) -> None:
         if isinstance(pixmap, Future):
@@ -145,13 +149,20 @@ class FolderViewer(QWidget):
         self.switch_image(-1)
 
     def clear_and_switch(self) -> None:
-        self._cache.delete(self.current_image_path)
+        self._cache.delete(
+            self.current_image_path,
+        )
+
         del self._image_paths[self._current_index]
 
         self.switch_image(0, force_update=True)
 
     def showEvent(self, a0: QtGui.QShowEvent):
+        super().showEvent(a0)
+
+        if not self._first_show:
+            return
+
         first_pixmap = self._load(self.current_image_path)
         self._update(first_pixmap)
-
-        super().showEvent(a0)
+        self._first_show = False

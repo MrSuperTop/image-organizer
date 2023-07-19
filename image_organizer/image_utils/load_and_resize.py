@@ -5,32 +5,30 @@ from PIL import Image, ImageOps
 from PyQt6.QtGui import QImage, QPixmap
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class Dimentions:
-    x: int
-    y: int
+    width: int
+    height: int
 
+    @property
     def size(self) -> tuple[int, int]:
-        return self.x, self.y
+        return self.width, self.height
 
 
 def pil2pixmap(image: Image.Image):
-    if image.mode == "RGB":
+    if image.mode == 'RGB':
         r, g, b = image.split()
-        image = Image.merge("RGB", (b, g, r))
-    elif  image.mode == "RGBA":
+        image = Image.merge('RGB', (b, g, r))
+    elif image.mode == 'RGBA':
         r, g, b, a = image.split()
-        image = Image.merge("RGBA", (b, g, r, a))
-    elif image.mode == "L":
-        image = image.convert("RGBA")
-
-    image = ImageOps.exif_transpose(image)
-
-    im2 = image.convert("RGBA")
+        image = Image.merge('RGBA', (b, g, r, a))
+    elif image.mode == 'L':
+        image = image.convert('RGBA')
 
     # * Ignoring, as the stubs for Pillow do not specify a type
-    data = im2.tobytes("raw", "RGBA") # pyright: ignore[reportUnknownMemberType]
-    qim = QImage(data, image.size[0], image.size[1], QImage.Format.Format_ARGB32)
+    data = image.convert('RGBA').tobytes('raw', 'RGBA') # pyright: ignore[reportUnknownMemberType]
+
+    qim = QImage(data, *image.size, QImage.Format.Format_ARGB32)
     pixmap = QPixmap.fromImage(qim)
 
     return pixmap
@@ -41,11 +39,14 @@ def load_and_resize(image_path: Path, max_dimensions: Dimentions) -> QPixmap | N
         return
 
     with Image.open(image_path) as image:
-        width, height = image.size
-        ratio = min(max_dimensions.x / width, max_dimensions.y / height)
+        image = ImageOps.exif_transpose(image)
+        ratio = min(
+            max_dimensions.width / image.width,
+            max_dimensions.height / image.height
+        )
 
         if ratio != 1:
-            new_size = int(width * ratio), int(height * ratio)
+            new_size = int(image.width * ratio), int(image.height * ratio)
             image = image.resize(new_size, Image.Resampling.BILINEAR)
 
         pixmap = pil2pixmap(image)

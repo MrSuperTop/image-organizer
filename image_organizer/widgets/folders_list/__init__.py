@@ -147,7 +147,6 @@ class FoldersList(QWidget):
     # https://stackoverflow.com/questions/27955403/how-to-use-qsortfilterproxymodels-setfilterregexp-along-with-filteracceptsrow
     # https://doc.qt.io/qt-6/qsortfilterproxymodel.html#filterAcceptsRow
     def _add_folder_handler(self) -> None:
-        # TODO: Handle the case when the dialog was closed without selecting a file
         file_dialog = QFileDialog(
             self,
             'Select folder',

@@ -89,6 +89,7 @@ class ControlButtonsGroup(QWidget):
         move(self.gallery.current_image_path, self.gallery.move_to)
         self.gallery.clear_and_switch()
 
+    # TODO: Update the image path in the db
     def trash_handler(self) -> None:
         to_trash = self.gallery.current_image_path
 

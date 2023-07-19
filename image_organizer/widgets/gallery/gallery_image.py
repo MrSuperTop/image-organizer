@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QLabel, QStackedLayout, QWidget
 
 from image_organizer.db.models.image import Image
 from image_organizer.image_utils.load_and_resize import Dimentions
-from image_organizer.image_utils.pixmap_cache import PixmapCache, PixmapOrFuture
+from image_organizer.pixmap_cache import PixmapCache, PixmapOrFuture
 
 
 class GalleryImage(QWidget):
@@ -18,6 +18,7 @@ class GalleryImage(QWidget):
     ) -> None:
         super().__init__(parent)
 
+        # TODO: Separate cache for the thumbnails
         self.cache = cache
         self.max_dimentions = max_dimentions
 
@@ -27,14 +28,12 @@ class GalleryImage(QWidget):
 
     def gui(self) -> None:
         self._layout = QStackedLayout()
-        self._layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self._image_container = QLabel()
-        self._image_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._image_container.setFixedSize(*self.max_dimentions.size())
+        self._image_container.setFixedSize(*self.max_dimentions.size)
 
         self._info_label = QLabel()
-        self._info_label.setFixedSize(*self.max_dimentions.size())
+        self._info_label.setFixedSize(*self.max_dimentions.size)
         self._info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._info_label.setText('No image...')
 
@@ -48,35 +47,30 @@ class GalleryImage(QWidget):
         self._info_label.setText(text)
         self._layout.setCurrentIndex(1)
         self._info_label.show()
+        self._image_container.setFixedSize(*self.max_dimentions.size)
 
     def _show_image(self, pixmap: QPixmap) -> None:
         self._info_label.hide()
         self._image_container.setPixmap(pixmap)
-        self._image_container.setFixedSize(*self.max_dimentions.size())
+        self._image_container.setFixedSize(*self.max_dimentions.size)
         self._layout.setCurrentIndex(0)
         self._image_container.show()
 
     def _load_pixmap(self, image: Image) -> PixmapOrFuture:
         self._show_info('Loading...')
 
-        pixmap = self.cache.get_or_load(
+        pixmap = self.cache.get_or_load_pixmap(
             image.path_formatter(image.path),
             self.max_dimentions
         )
 
         return pixmap
 
-    def _rescale(self, to_rescale: QPixmap) -> QPixmap:
-        if to_rescale.height() > to_rescale.width() and to_rescale.height() > self.max_dimentions.y:
-            return to_rescale.scaledToHeight(self.max_dimentions.y)
-        else:
-            return to_rescale.scaledToWidth(self.max_dimentions.x)
-
     def _set_image(self, pixmap: QPixmap | None) -> None:
         if pixmap is None:
             self._show_info('Could not load')
         else:
-            self._show_image(self._rescale(pixmap))
+            self._show_image(pixmap)
 
     async def set_image(self, new_image: Image) -> None:
         pixmap_or_future = self._load_pixmap(new_image)

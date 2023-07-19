@@ -18,7 +18,7 @@ from image_organizer.db import session
 from image_organizer.db.models.image import Image
 from image_organizer.db.models.tag import Tag
 from image_organizer.image_utils.load_and_resize import Dimentions
-from image_organizer.image_utils.pixmap_cache import PixmapCache
+from image_organizer.pixmap_cache import PixmapCache
 from image_organizer.widgets.gallery.gallery_image import GalleryImage
 from image_organizer.widgets.taggable_folder_viewer.tags_list import TagsList
 
@@ -107,7 +107,7 @@ class Gallery(QWidget):
 
         self.images: Sequence[Image] = session.scalars(images_query).all()
 
-        # FIXME: Start reusing the old containers and layouts
+        # TODO: Start reusing the old containers and layouts, encapsulate the grid in a custom QLayout component + make resizable
         for container in self._image_containers:
             container.deleteLater()
 
@@ -144,7 +144,7 @@ class Gallery(QWidget):
 
                     tasks.append(set_task)
                 except StopIteration:
-                    # TODO: Insert a proper spacer instead of stupidly running the loop. I wasn't able to figure out the sapcings unfortunately
+                    # TODO: Insert a proper spacer instead of stupidly running the loop. I wasn't able to figure out the spacings unfortunately
                     ...
 
                 column_layout.addWidget(next_container)

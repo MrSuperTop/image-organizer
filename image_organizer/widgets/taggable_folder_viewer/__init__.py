@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from image_organizer.db import session
 from image_organizer.db.models.image import Image
-from image_organizer.image_utils.pixmap_cache import PixmapCache, PixmapOrFuture
+from image_organizer.pixmap_cache import PixmapCache, PixmapOrFuture
 from image_organizer.widgets.taggable_folder_viewer.control_buttons_group import (
     ControlButtonsGroup,
 )

@@ -1,6 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-# TODO: Load in higher res images as it it goes deeper.
+# TODO: Load in higher res images as the zoom goes deeper.
 # TODO: Support for raw files using https://rawkit.readthedocs.io/en/v0.6.0/api/rawkit.html
 
 

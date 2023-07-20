@@ -28,8 +28,10 @@ class GalleryImage(QWidget):
 
     def gui(self) -> None:
         self._layout = QStackedLayout()
+        self._layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self._image_container = QLabel()
+        self._image_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_container.setFixedSize(*self.max_dimentions.size)
 
         self._info_label = QLabel()
@@ -47,7 +49,6 @@ class GalleryImage(QWidget):
         self._info_label.setText(text)
         self._layout.setCurrentIndex(1)
         self._info_label.show()
-        self._image_container.setFixedSize(*self.max_dimentions.size)
 
     def _show_image(self, pixmap: QPixmap) -> None:
         self._info_label.hide()
@@ -59,12 +60,12 @@ class GalleryImage(QWidget):
     def _load_pixmap(self, image: Image) -> PixmapOrFuture:
         self._show_info('Loading...')
 
-        pixmap = self.cache.get_or_load_pixmap(
+        _, loaded = self.cache.get_or_load_pixmap(
             image.path_formatter(image.path),
             self.max_dimentions
         )
 
-        return pixmap
+        return loaded
 
     def _set_image(self, pixmap: QPixmap | None) -> None:
         if pixmap is None:

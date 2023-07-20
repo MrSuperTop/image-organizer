@@ -1,7 +1,8 @@
 from collections.abc import Iterable
-from typing import TypeGuard, TypeVar
+from typing import LiteralString, TypeGuard, TypeVar
 
-SubString = str | None | Iterable[str | None]
+String = str | None | LiteralString
+SubString = String | Iterable[String]
 T = TypeVar('T')
 
 

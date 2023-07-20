@@ -61,7 +61,7 @@ class ImageViewer(QtWidgets.QGraphicsView):
 
     def hide_info_text(self) -> None:
         self._info_text.hide()
-        self._shown = False
+        self._shown = True
         self._photo.show()
 
     def fitInView( # pyright: ignore[reportIncompatibleMethodOverride]
@@ -90,8 +90,6 @@ class ImageViewer(QtWidgets.QGraphicsView):
 
             self.hide_info_text()
         else:
-            self.fitInView()
-
             self._empty = True
             self.setDragMode(QtWidgets.QGraphicsView.DragMode.NoDrag)
             self._photo.setPixmap(QtGui.QPixmap())

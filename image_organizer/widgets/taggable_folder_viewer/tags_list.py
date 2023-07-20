@@ -10,6 +10,7 @@ from image_organizer.db import session
 from image_organizer.db.models.image import Image
 from image_organizer.db.models.tag import Tag
 from ui.entry_list import EntryList
+from ui.folder_viewer import ImageChangedData
 
 if typing.TYPE_CHECKING:
     from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
@@ -62,12 +63,11 @@ class TagsList(EntryList):
 
         super()._add_handler()
 
-    def _image_change_handler(self, new_image: Image) -> None:
-        self.current_image = new_image
-
+    def _image_change_handler(self, changed_data: ImageChangedData) -> None:
+        self.current_image = changed_data.image
         self.list.clearSelection()
 
-        for tag in new_image.tags:
+        for tag in self.current_image.tags:
             if not tag.is_selected:
                 continue
 

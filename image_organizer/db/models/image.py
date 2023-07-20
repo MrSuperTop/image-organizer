@@ -1,7 +1,9 @@
+from collections.abc import Iterable
 from pathlib import Path
-from typing import overload
+from typing import Self, overload
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import select
+from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 from sqlalchemy.types import String
 
 from image_organizer.db.models import Base
@@ -34,3 +36,32 @@ class Image(Base):
             return str(path.absolute())
         else:
             return Path(path)
+
+    @classmethod
+    def many_from_paths(cls, paths: Iterable[Path], session: Session) -> list[Self]:
+        present_in_db_query = select(cls) \
+            .where(Image.path.in_(map(Image.path_formatter, paths)))
+
+        present_in_db = session.scalars(present_in_db_query).all()
+        already_loaded_paths = set(map(
+            lambda image: Image.path_formatter(image.path),
+            present_in_db
+        ))
+
+        images: list[Image] = list(present_in_db)
+        new_images: list[Image] = []
+        for path in map(Path.absolute, paths):
+            if path in already_loaded_paths:
+                continue
+
+            new_image = Image(
+                path=Image.path_formatter(path)
+            )
+
+            new_images.append(new_image)
+
+        session.add_all(new_images)
+        session.commit()
+
+        images.extend(new_images)
+        return images

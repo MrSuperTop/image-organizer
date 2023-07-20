@@ -22,6 +22,7 @@ CacheEntryOrFuture = CacheEntry | Future[CacheEntry | None]
 PixmapOrFuture = QPixmap | Future[QPixmap | None]
 
 Key = Path
+IsCached = bool
 DecoratedSpec = ParamSpec('DecoratedSpec')
 RT = TypeVar('RT')
 
@@ -144,14 +145,14 @@ class PixmapCache:
         self,
         image_path: Path,
         dimentions: Dimentions
-    ) -> PixmapOrFuture:
+    ) -> tuple[IsCached, PixmapOrFuture]:
         cached = self.get(image_path, dimentions)
 
         if cached is not None:
-            return cached.pixmap
+            return True, cached.pixmap
 
         pixmap_future, _ = self._load_image(image_path, dimentions)
-        return pixmap_future
+        return False, pixmap_future
 
     @overload
     def delete(self, key: Key) -> bool: ...

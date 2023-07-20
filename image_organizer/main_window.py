@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 
 from image_organizer.db import session
 from image_organizer.image_utils.find_images import find_images
@@ -81,7 +81,14 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.gallery, 'Gallery')
 
         self.splitter.addWidget(self.folders_list)
-        self.splitter.addWidget(self.tabs)
+
+        tabs_wrapper_layout = QVBoxLayout()
+        tabs_wrapper_layout.addWidget(self.tabs)
+
+        tabs_wrapper = QWidget()
+        tabs_wrapper.setLayout(tabs_wrapper_layout)
+
+        self.splitter.addWidget(tabs_wrapper)
 
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 2)

@@ -1,21 +1,41 @@
+from abc import ABC
 from asyncio import Future
 from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
 
 from PyQt6 import QtGui
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QGuiApplication, QPixmap
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
+from image_organizer.db import session
+from image_organizer.db.models.image import Image
 from image_organizer.image_utils.load_and_resize import Dimentions
 from image_organizer.pixmap_cache import PixmapCache, PixmapOrFuture
-from image_organizer.utils.format_strings import format_strings
 from ui.folder_viewer.image_viewer import ImageViewer
+from ui.folder_viewer.info_labels import InfoLabels
 
 DIMENTIONS_MULTIPLIER = 4
 
 
+@dataclass()
+class BaseImageChangedData(ABC):
+    pixmap: QPixmap | None
+    image: Image
+    is_cached: bool
+    total_images: int
+    current_index: int
+
+
+@dataclass()
+class ImageChangedData(BaseImageChangedData):
+    ...
+
+
 class FolderViewer(QWidget):
+    image_changed = pyqtSignal(object)
+
     def __init__(
         self,
         image_paths: Iterable[Path],
@@ -24,6 +44,7 @@ class FolderViewer(QWidget):
         super().__init__()
 
         self._image_paths = list(image_paths)
+        self.images = Image.many_from_paths(self._image_paths, session)
 
         self._first_show = True
         self.is_cached = False
@@ -35,34 +56,17 @@ class FolderViewer(QWidget):
 
     def gui(self) -> None:
         self._layout = QVBoxLayout()
+        self._layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
-        self.setup_image_layout()
-        self.setup_info_labels_layout()
-
-        self._layout.addLayout(self.image_layout)
-        self._layout.addLayout(self.info_labels_layout)
-
-        self.setLayout(self._layout)
-
-    def setup_image_layout(self) -> None:
-        self.image_layout = QVBoxLayout()
-        self.image_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
+        self.info_labels = InfoLabels(self._cache, self.image_changed)
         self._viewer = ImageViewer(
             self
         )
 
-        self.image_number_label = QLabel()
+        self._layout.addWidget(self._viewer)
+        self._layout.addWidget(self.info_labels)
 
-        self.image_layout.addWidget(self._viewer)
-        self.image_layout.addWidget(self.image_number_label)
-
-    def setup_info_labels_layout(self) -> None:
-        self.info_labels_layout = QVBoxLayout()
-
-        self.image_info_label = QLabel()
-
-        self.info_labels_layout.addWidget(self.image_info_label)
+        self.setLayout(self._layout)
 
     @property
     def current_image_path(self) -> Path:
@@ -75,14 +79,32 @@ class FolderViewer(QWidget):
             int(scene_rect.height() * DIMENTIONS_MULTIPLIER)
         )
 
-        return self._cache.get_or_load_pixmap(
+        self.is_cached, pixmap_or_future = self._cache.get_or_load_pixmap(
             image_path,
             suitable_dimentions
         )
 
+        return pixmap_or_future
+
+
+    @property
+    def current_image(self) -> Image:
+        return self.images[self._current_index]
+
+    def _emit_image_changed(self, pixmap: QPixmap | None) -> None:
+        image_changed_data = BaseImageChangedData(
+            pixmap,
+            self.current_image,
+            self.is_cached,
+            len(self._image_paths),
+            self._current_index
+        )
+
+        self.image_changed.emit(image_changed_data)
 
     def _update(self, pixmap: PixmapOrFuture | None) -> None:
         if isinstance(pixmap, Future):
+            # TODO: Util for handing Futures with the loading cursor
             QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             self._viewer.show_info_text('Loading...')
 
@@ -98,31 +120,8 @@ class FolderViewer(QWidget):
 
             return
 
+        self._emit_image_changed(pixmap)
         self._viewer.setPhoto(pixmap)
-
-        if pixmap is None:
-            self.image_info_label.setText('No information about the images...')
-            self.image_number_label.setText('0 / 0')
-
-            return
-
-        # FIXME: Move the labels to a separate component
-        formatted_path = str(self.current_image_path.absolute())
-        cached_string = '(cached)' if self.is_cached else None
-        cache_size = 'Cache size: {kbytes:.2f} KBytes ({mbytes:.2f} MBytes)'.format(
-            kbytes=self._cache.size_kbytes,
-            mbytes=self._cache.size_mb
-        )
-
-        self.image_info_label.setText(
-            format_strings(
-                (formatted_path, cached_string),
-                cache_size
-            )
-        )
-
-        image_number_text = f'{self._current_index + 1} / {len(self._image_paths)}'
-        self.image_number_label.setText(image_number_text)
 
     def switch_image(self, move_by: int, force_update: bool = False) -> None:
         if len(self._image_paths) == 0:

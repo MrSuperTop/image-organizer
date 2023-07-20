@@ -16,6 +16,11 @@ qasync = "^0.24.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"
+pyright = "^1.1.317"
+ruff = "^0.0.278"
+mypy = "^1.4.1"
+types-pillow = "^10.0.0.1"
+types-send2trash = "^1.8.2.5"
 
 [tool.isort]
 profile = "black"

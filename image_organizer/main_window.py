@@ -1,6 +1,11 @@
+import asyncio
+from asyncio import AbstractEventLoop, CancelledError, Future
+from functools import partial
 from pathlib import Path
+from typing import Any, Self
 
 from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 
 from image_organizer.db import session
@@ -17,7 +22,7 @@ from ui.my_splitter import MySplitter
 # TODO: Refactor to use snake_case https://www.qt.io/blog/qt-for-python-6-released
 # TODO: ABC for widgets how I like it
 # TODO: Option to move tagged files into individual folder
-# TODO: Option to copy a filder instead of moving it
+# TODO: Option to copy a file instead of moving it
 # TODO: Option for recusrsively going through the file tree
 
 
@@ -44,9 +49,6 @@ class MainWindow(QMainWindow):
             self.images_paths = to_move
 
         self.gui()
-
-    def clean_up(self) -> None:
-        session.close_all()
 
     def gui(self) -> None:
         self.setWindowTitle('Image Organizer')
@@ -95,10 +97,37 @@ class MainWindow(QMainWindow):
 
         self._layout.addWidget(self.splitter)
 
-        widget = QWidget()
-        widget.setLayout(self._layout)
+        central_widget = QWidget()
+        central_widget.setLayout(self._layout)
 
-        self.setCentralWidget(widget)
+        self.setCentralWidget(central_widget)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        *_: Any,
+    ) -> None:
+        session.close_all()
+
+    async def show_async(
+        self,
+        app: QGuiApplication,
+        event_loop: AbstractEventLoop
+    ) -> None:
+        future = event_loop.create_future()
+        def quit_handler(to_cancel: Future[Any]) -> None:
+            to_cancel.cancel()
+
+        app.aboutToQuit.connect(partial(quit_handler, future))
+
+        self.show()
+
+        try:
+            await asyncio.ensure_future(future, loop=event_loop)
+        except CancelledError:
+            return
 
     def move_to_change_handler(self, new_move_to: Path) -> None:
         self.move_to = new_move_to

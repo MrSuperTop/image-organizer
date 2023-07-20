@@ -6,13 +6,14 @@ from pathlib import Path
 
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QGuiApplication, QPixmap
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
 from image_organizer.db import session
 from image_organizer.db.models.image import Image
 from image_organizer.image_utils.load_and_resize import Dimentions
 from image_organizer.pixmap_cache import PixmapCache, PixmapOrFuture
+from image_organizer.utils.loading_cursor import loading_cursor
 from ui.folder_viewer.image_viewer import ImageViewer
 from ui.folder_viewer.info_labels import InfoLabels
 
@@ -104,8 +105,8 @@ class FolderViewer(QWidget):
 
     def _update(self, pixmap: PixmapOrFuture | None) -> None:
         if isinstance(pixmap, Future):
-            # TODO: Util for handing Futures with the loading cursor
-            QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            loading_cursor(pixmap)
+
             self._viewer.show_info_text('Loading...')
 
             def done_callback(completed_future: Future[QPixmap | None]) -> None:
@@ -114,7 +115,6 @@ class FolderViewer(QWidget):
                     return
 
                 self._update(result)
-                QGuiApplication.setOverrideCursor(Qt.CursorShape.ArrowCursor)
 
             pixmap.add_done_callback(done_callback)
 

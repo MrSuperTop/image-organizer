@@ -50,9 +50,9 @@ class PixmapCache:
     ) -> None:
         super().__init__()
 
-        # TODO: Inforce the cache limit, delete the oldset record or the least used one
         self._cache_limit = cache_limit_kbytes
         self._cache: dict[Key, list[CacheEntry]] = dict()
+        self._time_sorted_entries: list[CacheEntry] = []
         self._size = 0
 
         self._event_loop = asyncio.get_running_loop()
@@ -85,6 +85,11 @@ class PixmapCache:
     @_format_key
     def insert(self, key: Key, entry: CacheEntry) -> None:
         self._size += entry.pixmap_size_bytes()
+        while self.size_kbytes > self._cache_limit:
+            to_delete = self._time_sorted_entries.pop(0)
+            self.delete(to_delete.image_path)
+
+        self._time_sorted_entries.append(entry)
 
         if key in self._cache:
             self._cache[key].append(entry)
@@ -115,7 +120,8 @@ class PixmapCache:
 
             new_entry = CacheEntry(
                 value,
-                dimentions
+                dimentions,
+                image_path
             )
 
             self.insert(image_path, new_entry)

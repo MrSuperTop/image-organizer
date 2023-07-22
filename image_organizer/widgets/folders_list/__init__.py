@@ -50,7 +50,7 @@ def format_forbidden_folders(
 
 
 class FoldersList(QWidget):
-    selected_path = pyqtSignal(Path)
+    move_to_changed = pyqtSignal(Path)
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class FoldersList(QWidget):
         selected = self._paths_list.selectedItems()[0]
         path_data: Path = selected.data(Qt.ItemDataRole.UserRole)
 
-        self.selected_path.emit(path_data)
+        self.move_to_changed.emit(path_data)
 
     def _is_forbidden_path(
         self,

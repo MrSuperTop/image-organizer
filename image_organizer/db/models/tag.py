@@ -33,6 +33,6 @@ class Tag(Base):
     def distinct_tag_names(cls, session: Session) -> list[str]:
         distinct_tags_query = select(cls.name).distinct()
         distinct_names_rows = session.execute(distinct_tags_query)
-        distinct_names: list[str] = list(map(lambda row: row[0], distinct_names_rows))
+        distinct_names: list[str] = list(filter(None, map(lambda row: row[0].strip(), distinct_names_rows)))
 
         return distinct_names

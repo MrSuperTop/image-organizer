@@ -57,8 +57,8 @@ class PathsList(QListWidget):
     def contextMenuEvent(self, a0: QtGui.QContextMenuEvent) -> None:
         super().contextMenuEvent(a0)
 
-        effected_item = self.itemAt(a0.pos())
+        affected_item = self.itemAt(a0.pos())
         action = self._context_menu.exec(a0.globalPos())
 
         if action == self._remove_action and self.count() > self.minimum_length:
-            self.takeItem(self.row(effected_item))
+            self.takeItem(self.row(affected_item))

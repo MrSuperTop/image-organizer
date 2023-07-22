@@ -17,7 +17,9 @@ class Image(Base):
     path: Mapped[str] = mapped_column(String(), unique=True)
 
     tags: Mapped[list[Tag]] = relationship(
-        back_populates='image', cascade='all, delete-orphan'
+        back_populates='image',
+        cascade='all, delete-orphan',
+        lazy='joined'
     )
 
     @staticmethod
@@ -37,14 +39,17 @@ class Image(Base):
         else:
             return Path(path)
 
+    def format_path(self) -> Path:
+        return self.path_formatter(self.path)
+
     @classmethod
     def many_from_paths(cls, paths: Iterable[Path], session: Session) -> list[Self]:
         present_in_db_query = select(cls) \
             .where(Image.path.in_(map(Image.path_formatter, paths)))
 
-        present_in_db = session.scalars(present_in_db_query).all()
+        present_in_db = session.scalars(present_in_db_query).unique().all()
         already_loaded_paths = set(map(
-            lambda image: Image.path_formatter(image.path),
+            lambda image: image.format_path(),
             present_in_db
         ))
 

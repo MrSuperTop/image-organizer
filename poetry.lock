@@ -306,14 +306,14 @@ files = [
 
 [[package]]
 name = "pyright"
-version = "1.1.317"
+version = "1.1.318"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.317-py3-none-any.whl", hash = "sha256:9cf24f83fe8f2cf00773068e06ce771f03331590c7d5e771546f81d7f60efaba"},
-    {file = "pyright-1.1.317.tar.gz", hash = "sha256:74da4d3e2dcfe66a2d1d1001e16431ec17aac0ad35b03c0410f7379c2cb5c7f0"},
+    {file = "pyright-1.1.318-py3-none-any.whl", hash = "sha256:056c1b2e711c3526e32919de1684ae599d34b7ec27e94398858a43f56ac9ba9b"},
+    {file = "pyright-1.1.318.tar.gz", hash = "sha256:69dcf9c32d5be27d531750de627e76a7cadc741d333b547c09044278b508db7b"},
 ]
 
 [package.dependencies]
@@ -477,26 +477,26 @@ sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
 name = "types-pillow"
-version = "10.0.0.1"
+version = "10.0.0.2"
 description = "Typing stubs for Pillow"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-Pillow-10.0.0.1.tar.gz", hash = "sha256:834a07a04504f8bf37936679bc6a5802945e7644d0727460c0c4d4307967e2a3"},
-    {file = "types_Pillow-10.0.0.1-py3-none-any.whl", hash = "sha256:be576b67418f1cb3b93794cf7946581be1009a33a10085b3c132eb0875a819b4"},
+    {file = "types-Pillow-10.0.0.2.tar.gz", hash = "sha256:fe09380ab22d412ced989a067e9ee4af719fa3a47ba1b53b232b46514a871042"},
+    {file = "types_Pillow-10.0.0.2-py3-none-any.whl", hash = "sha256:29d51a3ce6ef51fabf728a504d33b4836187ff14256b2e86996d55c91ab214b1"},
 ]
 
 [[package]]
 name = "types-send2trash"
-version = "1.8.2.5"
+version = "1.8.2.6"
 description = "Typing stubs for Send2Trash"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-Send2Trash-1.8.2.5.tar.gz", hash = "sha256:35732527de14f037267c45ebd46f091e29555ba5c677f08fda4d0d8aca42ac8c"},
-    {file = "types_Send2Trash-1.8.2.5-py3-none-any.whl", hash = "sha256:db53a420d4a2f4ba9e21c5279dbfc2820f37afd9e4bfc841acd9d205ceed8321"},
+    {file = "types-Send2Trash-1.8.2.6.tar.gz", hash = "sha256:4b4eec2ba615dd1f3824926e2e2024e51f7803ef7730abf3989aa73f13f4f31f"},
+    {file = "types_Send2Trash-1.8.2.6-py3-none-any.whl", hash = "sha256:84970ca6e6d82d135653f5e75a2fadc649d02fbf919af92476c79e3eb6f15aba"},
 ]
 
 [[package]]

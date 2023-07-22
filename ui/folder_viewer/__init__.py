@@ -7,7 +7,7 @@ from pathlib import Path
 from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QLayout, QVBoxLayout, QWidget
 
 from image_organizer.db import session
 from image_organizer.db.models.image import Image
@@ -16,6 +16,7 @@ from image_organizer.pixmap_cache import PixmapCache, PixmapOrFuture
 from image_organizer.utils.loading_cursor import loading_cursor
 from ui.folder_viewer.image_viewer import ImageViewer
 from ui.folder_viewer.info_labels import InfoLabels
+from ui.folder_viewer.movement_buttonts import MovementButtons
 
 DIMENTIONS_MULTIPLIER = 4
 
@@ -34,6 +35,7 @@ class ImageChangedData(BaseImageChangedData):
     ...
 
 
+# TODO: See the mime types, order the photos in chronological order
 class FolderViewer(QWidget):
     image_changed = pyqtSignal(object)
 
@@ -44,8 +46,7 @@ class FolderViewer(QWidget):
     ):
         super().__init__()
 
-        self._image_paths = list(image_paths)
-        self.images = Image.many_from_paths(self._image_paths, session)
+        self.images = Image.many_from_paths(image_paths, session)
 
         self._first_show = True
         self.is_cached = False
@@ -53,25 +54,31 @@ class FolderViewer(QWidget):
 
         self._cache = cache
 
-        self.gui()
+        self._layout = self.gui()
+        self.setLayout(self._layout)
 
-    def gui(self) -> None:
-        self._layout = QVBoxLayout()
-        self._layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+    def gui(self) -> QLayout:
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.info_labels = InfoLabels(self._cache, self.image_changed)
         self._viewer = ImageViewer(
             self
         )
 
-        self._layout.addWidget(self._viewer)
-        self._layout.addWidget(self.info_labels)
+        self.movement_buttons = MovementButtons()
+        self.movement_buttons.next_signal.connect(self.next)
+        self.movement_buttons.prev_signal.connect(self.prev)
 
-        self.setLayout(self._layout)
+        layout.addWidget(self._viewer)
+        layout.addWidget(self.info_labels)
+        layout.addWidget(self.movement_buttons)
+
+        return layout
 
     @property
     def current_image_path(self) -> Path:
-        return self._image_paths[self._current_index]
+        return self.current_image.format_path()
 
     def _load(self, image_path: Path) -> PixmapOrFuture:
         scene_rect = self.rect()
@@ -97,7 +104,7 @@ class FolderViewer(QWidget):
             pixmap,
             self.current_image,
             self.is_cached,
-            len(self._image_paths),
+            len(self.images),
             self._current_index
         )
 
@@ -124,13 +131,13 @@ class FolderViewer(QWidget):
         self._viewer.setPhoto(pixmap)
 
     def switch_image(self, move_by: int, force_update: bool = False) -> None:
-        if len(self._image_paths) == 0:
+        if len(self.images) == 0:
             self._update(None)
             return
 
         old_index = self._current_index
         self._current_index = max(
-            min(len(self._image_paths) - 1, self._current_index + move_by),
+            min(len(self.images) - 1, self._current_index + move_by),
             0
         )
 
@@ -152,7 +159,7 @@ class FolderViewer(QWidget):
             self.current_image_path,
         )
 
-        del self._image_paths[self._current_index]
+        self.images.pop(self._current_index)
 
         self.switch_image(0, force_update=True)
 

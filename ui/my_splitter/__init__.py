@@ -1,6 +1,13 @@
 from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtGui import QEnterEvent
-from PyQt6.QtWidgets import QApplication, QSplitter, QSplitterHandle
+from PyQt6.QtWidgets import (
+    QApplication,
+    QLayout,
+    QSplitter,
+    QSplitterHandle,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class MySplitterHandle(QSplitterHandle):
@@ -24,3 +31,17 @@ class MySplitter(QSplitter):
         self.split_handle = MySplitterHandle(self.orientation(), self)
 
         return self.split_handle
+
+    def addLayout(self, layout: QLayout) -> QWidget:
+        layout_wrapper = QWidget()
+        layout_wrapper.setLayout(layout)
+
+        super().addWidget(layout_wrapper)
+
+        return layout_wrapper
+
+    def addWrappedWidget(self, widget: QWidget) -> None:
+        wrapper_layout = QVBoxLayout()
+        wrapper_layout.addWidget(widget)
+
+        self.addLayout(wrapper_layout)

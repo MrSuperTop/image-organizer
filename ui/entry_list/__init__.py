@@ -1,7 +1,9 @@
 from collections.abc import Iterable
 
-from PyQt6.QtWidgets import QLineEdit, QListWidget, QVBoxLayout, QWidget
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QHBoxLayout, QLineEdit, QListWidgetItem, QVBoxLayout, QWidget
 
+from ui.entry_list.list_with_menu import ContextMenuSelectedData, ListWithMenu
 from ui.paths_list import LIST_STYLES
 
 
@@ -14,10 +16,10 @@ class EntryList(QWidget):
     ) -> None:
         super().__init__(parent)
 
-        self.possible_entries = list(possible_entries)
-        self.selected_entries = list(default_selected_entries)
+        self.present_entries = set(possible_entries)
 
-        self.gui()
+        self._layout = self.gui()
+        self.setLayout(self._layout)
 
         for index, entry in enumerate(possible_entries):
             self.add_list_item(entry)
@@ -25,29 +27,48 @@ class EntryList(QWidget):
             if entry in default_selected_entries:
                 self.list.setCurrentRow(index)
 
-    def add_list_item(self, entry: str) -> None:
-        self.list.addItem(entry)
+    def gui(self) -> QVBoxLayout | QHBoxLayout:
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
-    def gui(self, *before_widgets: QWidget) -> None:
-        self._layout = QVBoxLayout()
-        self._layout.setContentsMargins(0, 0, 0, 0)
-
-        self.list = QListWidget()
+        self._remove_action = QAction('Remove')
+        self._actions = [
+            self._remove_action
+        ]
 
         self.entry_field = QLineEdit()
         self.entry_field.returnPressed.connect(self._add_handler)
 
-        for widget in before_widgets:
-            self._layout.addWidget(widget)
+        self.list = ListWithMenu(self._actions)
+        self.list.context_menu_selected.connect(self._context_menu_handler)
 
-        self._layout.addWidget(self.list)
-        self._layout.addWidget(self.entry_field)
+        layout.addWidget(self.entry_field)
+        layout.addWidget(self.list)
 
-        self.setLayout(self._layout)
         self.setStyleSheet(LIST_STYLES)
+
+        return layout
+
+    def add_list_item(self, entry: str) -> None:
+        self.list.addItem(entry)
 
     def _add_handler(self) -> None:
         text = self.entry_field.text()
+        if text in self.present_entries:
+            return
+
         self.list.addItem(text)
+        self.present_entries.add(text)
 
         self.entry_field.clear()
+
+    def _context_menu_handler(self, signal_data: ContextMenuSelectedData) -> None:
+        match signal_data.action:
+            case self._remove_action:
+                self._remove_handler(signal_data.affected_item)
+            case _:
+                ...
+
+    def _remove_handler(self, to_remove: QListWidgetItem) -> None:
+        to_remove_index = self.list.row(to_remove)
+        self.list.takeItem(to_remove_index)

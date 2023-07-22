@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy import select
+from sqlalchemy import select, true
 
 from image_organizer.db import session
 from image_organizer.db.models.image import Image
@@ -20,12 +20,14 @@ from image_organizer.db.models.tag import Tag
 from image_organizer.image_utils.load_and_resize import Dimentions
 from image_organizer.pixmap_cache import PixmapCache
 from image_organizer.widgets.gallery.gallery_image import GalleryImage
-from image_organizer.widgets.taggable_folder_viewer.tags_list import TagsList
+from image_organizer.widgets.viewer.tags_list import TagsList
 
 DESIRED_WIDTH = 3
 IMAGE_HEIGTH_TO_WIDTH_RATION: Final[float] = 9 / 16
 EVERYTHING_VARIANT = 'All images'
 
+
+# TODO: Isolate the tag selector + use Tag objects instead of strings everywhere
 class Gallery(QWidget):
     def __init__(
         self,
@@ -37,6 +39,8 @@ class Gallery(QWidget):
         super().__init__(parent)
 
         tags_list.new_tag_added.connect(self._new_tag_added_handler)
+        tags_list.tag_removed.connect(self._tag_removed_handler)
+        self.tags_list = tags_list
 
         self.preferred_grid_width = DESIRED_WIDTH
         image_width = self.width() // self.preferred_grid_width
@@ -71,7 +75,7 @@ class Gallery(QWidget):
         tags_selector_layout = QVBoxLayout()
         self.tags_label = QLabel('Select tag')
         self.tags_selector = QComboBox()
-        self.tags_selector.activated.connect(self._tag_change_handler)
+        self.tags_selector.activated.connect(self._selected_tag_change_handler)
 
         tags_selector_layout.addWidget(self.tags_label)
         tags_selector_layout.addWidget(self.tags_selector)
@@ -103,9 +107,9 @@ class Gallery(QWidget):
         else:
             images_query = select(Image) \
                 .join(Tag, Tag.image_id == Image.id) \
-                .where(Tag.name == tag_name)
+                .where(Tag.name == tag_name, Tag.is_selected == true())
 
-        self.images: Sequence[Image] = session.scalars(images_query).all()
+        self.images: Sequence[Image] = session.scalars(images_query).unique().all()
 
         # TODO: Start reusing the old containers and layouts, encapsulate the grid in a custom QLayout component + make resizable
         for container in self._image_containers:
@@ -152,9 +156,9 @@ class Gallery(QWidget):
             self.images_grid.insertLayout(self.images_grid.count() - 1, column_layout)
 
     def update_images(self, tag_name: str) -> None:
-        asyncio.ensure_future(self._update_images(tag_name))
+        asyncio.create_task(self._update_images(tag_name))
 
-    def _tag_change_handler(self, tag_index: int) -> None:
+    def _selected_tag_change_handler(self, tag_index: int) -> None:
         new_tag_name = self.tag_names[tag_index]
 
         if new_tag_name == self.selected_tag_name:
@@ -164,5 +168,16 @@ class Gallery(QWidget):
         self.selected_tag_name = new_tag_name
 
     def _new_tag_added_handler(self, new_tag: str) -> None:
+        print(new_tag)
         self.tag_names.append(new_tag)
         self.tags_selector.addItem(new_tag)
+
+    def _tag_removed_handler(self, removed_tag: str) -> None:
+        to_remove_index = self.tag_names.index(removed_tag)
+
+        deleted_name = self.tag_names.pop(to_remove_index)
+        if deleted_name == self.selected_tag_name:
+            self.tags_selector.setCurrentIndex(0)
+            self.tags_selector.activated.emit(0)
+
+        self.tags_selector.removeItem(to_remove_index)

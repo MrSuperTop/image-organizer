@@ -6,14 +6,13 @@ from typing import Any, Self
 
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QWidget
 
 from image_organizer.db import session
 from image_organizer.image_utils.find_images import find_images
 from image_organizer.pixmap_cache import PixmapCache
-from image_organizer.widgets.folders_list import FoldersList, ForbiddenFoldersFilter
 from image_organizer.widgets.gallery import Gallery
-from image_organizer.widgets.taggable_folder_viewer import TaggableFolderViewer
+from image_organizer.widgets.viewer import Viewer
 from ui.my_splitter import MySplitter
 
 # TODO: Implement shortcuts for movement, ctrl + z, etc.
@@ -56,46 +55,20 @@ class MainWindow(QMainWindow):
         self._layout = QHBoxLayout()
         self.splitter = MySplitter(Qt.Orientation.Horizontal)
 
-        forbidden_folders = None
-        if isinstance(self.to_move, Path) and self.to_move.is_dir():
-            forbidden_folders: ForbiddenFoldersFilter = [(
-                self.to_move,
-                'you can\'t select the folder you have chosen as the source folder for your images'
-            )]
-
-        self.folders_list = FoldersList(
-            self.move_to,
-            forbidden_folders
-        )
-
-        self.folders_list.selected_path.connect(self.move_to_change_handler)
-
         self.tabs = QTabWidget()
-        self.folder_viewer = TaggableFolderViewer(
+        self.viewer = Viewer(
             self.images_paths,
+            self.to_move,
             self.move_to,
             self.cache
         )
 
-        self.tabs.addTab(self.folder_viewer, 'Viewer')
+        self.tabs.addTab(self.viewer, 'Viewer')
 
-        self.gallery = Gallery(self.cache, self.folder_viewer.tags_list)
+        self.gallery = Gallery(self.cache, self.viewer.tags_list)
         self.tabs.addTab(self.gallery, 'Gallery')
 
-        self.splitter.addWidget(self.folders_list)
-
-        tabs_wrapper_layout = QVBoxLayout()
-        tabs_wrapper_layout.addWidget(self.tabs)
-
-        tabs_wrapper = QWidget()
-        tabs_wrapper.setLayout(tabs_wrapper_layout)
-
-        self.splitter.addWidget(tabs_wrapper)
-
-        self.splitter.setStretchFactor(0, 1)
-        self.splitter.setStretchFactor(1, 2)
-
-        self._layout.addWidget(self.splitter)
+        self._layout.addWidget(self.tabs)
 
         central_widget = QWidget()
         central_widget.setLayout(self._layout)
@@ -109,6 +82,7 @@ class MainWindow(QMainWindow):
         self,
         *_: Any,
     ) -> None:
+        session.commit()
         session.close_all()
 
     async def show_async(
@@ -128,6 +102,3 @@ class MainWindow(QMainWindow):
             await asyncio.ensure_future(future, loop=event_loop)
         except CancelledError:
             return
-
-    def move_to_change_handler(self, new_move_to: Path) -> None:
-        self.move_to = new_move_to

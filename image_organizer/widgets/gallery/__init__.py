@@ -105,6 +105,7 @@ class Gallery(QWidget):
         if tag_name == EVERYTHING_VARIANT:
             images_query = select(Image)
         else:
+            # TODO: Query only the images under the correct directory
             images_query = select(Image) \
                 .join(Tag, Tag.image_id == Image.id) \
                 .where(Tag.name == tag_name, Tag.is_selected == true())
@@ -168,7 +169,6 @@ class Gallery(QWidget):
         self.selected_tag_name = new_tag_name
 
     def _new_tag_added_handler(self, new_tag: str) -> None:
-        print(new_tag)
         self.tag_names.append(new_tag)
         self.tags_selector.addItem(new_tag)
 

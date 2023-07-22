@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLayout
 
 from image_organizer.pixmap_cache import PixmapCache
 from image_organizer.widgets.folders_list import FoldersList, ForbiddenFoldersFilter
-from image_organizer.widgets.viewer.action_buttons_group import ActionButtonsGroup
+from image_organizer.widgets.viewer.action_buttons import ActionButtons
 from image_organizer.widgets.viewer.tags_list import TagsList
 from ui.folder_viewer import FolderViewer
 from ui.my_splitter import MySplitter
@@ -47,7 +47,7 @@ class Viewer(FolderViewer):
 
         folder_viewer_layout = super().gui()
 
-        self.action_buttons = ActionButtonsGroup(
+        self.action_buttons = ActionButtons(
             self
         )
 

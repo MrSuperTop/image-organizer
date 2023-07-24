@@ -8,6 +8,7 @@ from typing import NoReturn
 ERROR_MESSAGE_BASE = 'The path for {dest} {message}'
 
 
+# TODO: Additional rules which can be provided in a form of an enum to the __init__, in this particular case there is a need to forbid any of the directories provided as the "move_to" to be the save as os.getcwd()
 class AccessibleDirectory(argparse.Action):
     def _raise_error(self, message: str) -> NoReturn:
         raise ArgumentError(

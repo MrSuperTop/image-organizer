@@ -16,7 +16,7 @@ class Viewer(FolderViewer):
         self,
         image_paths: Iterable[Path],
         to_move: Path | list[Path],
-        move_to: Path,
+        move_to_folders: list[Path],
         cache: PixmapCache
     ) -> None:
         self.forbidden_folders = None
@@ -26,7 +26,7 @@ class Viewer(FolderViewer):
                 'you can\'t select the folder you have chosen as the source folder for your images'
             )]
 
-        self._move_to = move_to
+        self._move_to = move_to_folders
         self._to_move = to_move
 
         super().__init__(image_paths, cache)
@@ -36,12 +36,15 @@ class Viewer(FolderViewer):
 
         self.splitter = MySplitter()
 
+        start_move_to = None
+        if len(self._move_to) == 1:
+            start_move_to = self._move_to[0]
+
         self.folders_list = FoldersList(
             self._move_to,
+            start_move_to,
             self.forbidden_folders
         )
-
-        self.folders_list.move_to_changed.connect(self.move_to_changed_handler)
 
         self.splitter.addWidget(self.folders_list)
 
@@ -64,14 +67,3 @@ class Viewer(FolderViewer):
 
         layout.addWidget(self.splitter)
         return layout
-
-    @property
-    def move_to(self):
-        return self._move_to
-
-    @move_to.setter
-    def move_to(self, new_move_to: Path) -> None:
-        self._move_to = new_move_to
-
-    def move_to_changed_handler(self, new_move_to: Path) -> None:
-        self.move_to = new_move_to

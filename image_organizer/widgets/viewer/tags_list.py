@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
     QLabel,
-    QLayout,
     QListWidgetItem,
     QPushButton,
     QVBoxLayout,
@@ -20,6 +19,7 @@ from image_organizer.db.models.image import Image
 from image_organizer.db.models.tag import Tag
 from ui.entry_list import EntryList
 from ui.folder_viewer import ImageChangedData
+from ui.list_with_menu import ContextMenuSelectedData
 
 if typing.TYPE_CHECKING:
     from image_organizer.widgets.viewer import Viewer
@@ -56,6 +56,7 @@ class TagsList(EntryList):
 
         self.list.itemPressed.connect(self._select_handler)
         self.list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.list.add_action(self.list.remove_action, self._remove_handler)
 
         self.label = QLabel('Image tags')
         layout.insertWidget(0, self.label)
@@ -131,7 +132,12 @@ class TagsList(EntryList):
         selected_tag.is_selected = selected_item.isSelected()
         self.is_synced = False
 
-    def _remove_handler(self, to_remove: QListWidgetItem) -> None:
+    def _remove_handler(
+        self,
+        signal_data: ContextMenuSelectedData[QListWidgetItem]
+    ) -> None:
+        to_remove = signal_data.affected_item
+
         self.save_if_not()
 
         to_remove_name = to_remove.text()
@@ -148,5 +154,4 @@ class TagsList(EntryList):
         if found_index is not None:
             self.current_image.tags.pop(found_index)
 
-        super()._remove_handler(to_remove)
         self.tag_removed.emit(to_remove_name)

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
@@ -23,15 +24,16 @@ def parse_args() -> MyNamespace:
         'to_move',
         help='The directory from which you want to move file or a glob which specifies which files you would like to move',
         type=Path,
-        action=DirectoryOrGlob
+        action=DirectoryOrGlob,
+        default=Path(os.getcwd())
     )
 
-    # TODO: Make this optional and block the button
     ap.add_argument(
         'move_to',
         help='The default directory to which the files will be moved',
         type=Path,
-        action=AccessibleDirectory
+        action=AccessibleDirectory,
+        nargs='*'
     )
 
     nsp = MyNamespace()

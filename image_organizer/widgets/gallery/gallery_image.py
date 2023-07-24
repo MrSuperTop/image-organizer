@@ -18,7 +18,6 @@ class GalleryImage(QWidget):
     ) -> None:
         super().__init__(parent)
 
-        # TODO: Separate cache for the thumbnails
         self.cache = cache
         self.max_dimentions = max_dimentions
 

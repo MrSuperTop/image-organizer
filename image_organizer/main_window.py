@@ -9,6 +9,11 @@ from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QTabWidget, QWidget
 
 from image_organizer.db import session
+from image_organizer.errors import (
+    IsNotADirectoryError,
+    NoImagesFoundError,
+    SamePathError,
+)
 from image_organizer.image_utils.find_images import find_images
 from image_organizer.pixmap_cache import PixmapCache
 from image_organizer.widgets.gallery import Gallery
@@ -28,9 +33,8 @@ from ui.my_splitter import MySplitter
 class MainWindow(QMainWindow):
     def __init__(
         self,
-        # TODO: Get this argument type sorted out or get rid of it all together by loading cwd and adding an option to open a folder
         to_move: Path | list[Path],
-        move_to: Path,
+        move_to: list[Path],
         size: QSize
     ) -> None:
         super().__init__()
@@ -43,9 +47,21 @@ class MainWindow(QMainWindow):
         self.cache = PixmapCache()
 
         if isinstance(to_move, Path):
+            to_move = to_move.absolute()
+
+            for single_dir in map(Path.absolute, move_to):
+                if not single_dir.is_dir():
+                    raise IsNotADirectoryError(single_dir)
+
+                if to_move == single_dir:
+                    raise SamePathError(to_move, single_dir)
+
             self.images_paths = find_images(to_move)
         else:
             self.images_paths = to_move
+
+        if len(self.images_paths) == 0:
+            raise NoImagesFoundError(to_move)
 
         self.gui()
 

@@ -63,8 +63,7 @@ class NewFilenameDialog(QDialog):
 
         new_path = self.colliding_path.parent / Path(new_filename)
         if self.colliding_path.suffix != new_path.suffix:
-            new_name = f'{new_path.name}{self.colliding_path.suffix}'
-            new_path = new_path.parent / new_name
+            new_path = new_path.with_suffix(self.colliding_path.suffix)
 
         if new_path.exists():
             message_text = f'A file at "{new_path}" also already exists'

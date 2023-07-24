@@ -1,9 +1,14 @@
 from collections.abc import Iterable
 
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QHBoxLayout, QLineEdit, QListWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QLineEdit,
+    QListWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from ui.entry_list.list_with_menu import ContextMenuSelectedData, ListWithMenu
+from ui.list_with_menu.list_with_remove import ListWithRemove
 from ui.paths_list import LIST_STYLES
 
 
@@ -31,16 +36,11 @@ class EntryList(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self._remove_action = QAction('Remove')
-        self._actions = [
-            self._remove_action
-        ]
 
         self.entry_field = QLineEdit()
         self.entry_field.returnPressed.connect(self._add_handler)
 
-        self.list = ListWithMenu(self._actions)
-        self.list.context_menu_selected.connect(self._context_menu_handler)
+        self.list = ListWithRemove[QListWidgetItem]()
 
         layout.addWidget(self.entry_field)
         layout.addWidget(self.list)
@@ -61,14 +61,3 @@ class EntryList(QWidget):
         self.present_entries.add(text)
 
         self.entry_field.clear()
-
-    def _context_menu_handler(self, signal_data: ContextMenuSelectedData) -> None:
-        match signal_data.action:
-            case self._remove_action:
-                self._remove_handler(signal_data.affected_item)
-            case _:
-                ...
-
-    def _remove_handler(self, to_remove: QListWidgetItem) -> None:
-        to_remove_index = self.list.row(to_remove)
-        self.list.takeItem(to_remove_index)

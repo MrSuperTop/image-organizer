@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Literal
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -50,36 +50,50 @@ def format_forbidden_folders(
 
 
 class FoldersList(QWidget):
-    move_to_changed = pyqtSignal(Path)
+    move_to_changed = pyqtSignal(object)
 
     def __init__(
         self,
+        options: list[Path] = list(),
         start_selection: Path | None = None,
         forbidden_folders: ForbiddenFoldersFilter = None,
         parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
 
-        self.folders: set[Path] = set()
+        self._layout = self.gui()
+        self.setLayout(self._layout)
+
+        self.folders: set[Path] = set(options)
+
+        if start_selection is not None:
+            start_selection = start_selection.absolute()
+            if start_selection not in self.folders:
+                self.folders.add(start_selection)
+
+            self.move_to_changed.emit(start_selection)
+
+            start_selection_item = self._list.add_path(start_selection)
+            self._list.setCurrentItem(start_selection_item)
+
+        for folder in map(Path.absolute, self.folders):
+            if not folder.is_dir() or folder == start_selection:
+                continue
+
+            self._list.add_path(folder)
 
         self.forbidden_folders: ForbiddenFoldersFilter = None
         if forbidden_folders is not None:
             self.forbidden_folders = format_forbidden_folders(forbidden_folders)
 
-        self.gui()
+    def gui(self) -> QVBoxLayout:
+        layout = QVBoxLayout()
 
-        if start_selection is not None:
-            self.add_folder(start_selection)
-            self._paths_list.setCurrentRow(0)
-
-    def gui(self) -> None:
-        self._layout = QVBoxLayout()
-
-        self._paths_list = PathsList(
+        self._list = PathsList(
             mininum_lenght=1
         )
 
-        self._paths_list.itemSelectionChanged.connect(self._selection_handler)
+        self._list.itemSelectionChanged.connect(self._selection_handler)
 
         self._buttons_layout = QHBoxLayout()
 
@@ -92,17 +106,18 @@ class FoldersList(QWidget):
         )
         self._msg_box.setIcon(QMessageBox.Icon.Warning)
 
-        self._layout.addWidget(self._paths_list)
-        self._layout.addLayout(self._buttons_layout)
+        layout.addWidget(self._list)
+        layout.addLayout(self._buttons_layout)
 
-        self.setLayout(self._layout)
-
+        return layout
 
     def _selection_handler(self) -> None:
-        selected = self._paths_list.selectedItems()[0]
-        path_data: Path = selected.data(Qt.ItemDataRole.UserRole)
+        selected = self._list.selected
+        if selected is None:
+            self.move_to_changed.emit(None)
+            return
 
-        self.move_to_changed.emit(path_data)
+        self.move_to_changed.emit(selected.path)
 
     def _is_forbidden_path(
         self,
@@ -141,7 +156,7 @@ class FoldersList(QWidget):
             )
 
         self.folders.add(folder_path)
-        self._paths_list.add_path(folder_path)
+        self._list.add_path(folder_path)
 
     # TODO: Implement a custom QSortFilterProxyModel
     # https://stackoverflow.com/questions/27955403/how-to-use-qsortfilterproxymodels-setfilterregexp-along-with-filteracceptsrow

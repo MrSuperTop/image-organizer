@@ -4,11 +4,12 @@ import shutil
 import typing
 from pathlib import Path
 
-from PyQt6.QtWidgets import QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QDialog, QMessageBox, QPushButton, QVBoxLayout, QWidget
 from send2trash import send2trash as send_to_trash
 
 from image_organizer.db import session
 from image_organizer.db.models.image import Image
+from image_organizer.pixmap_cache import PixmapCache
 from image_organizer.widgets.viewer.action_buttons.new_filename_dialog import (
     NewFilenameDialog,
 )
@@ -22,12 +23,14 @@ class ActionButtons(QWidget):
     def __init__(
         self,
         connected_viewer: Viewer,
+        pixmap_cache: PixmapCache,
+        start_move_to: Path | None = None,
         parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
 
-
-        self._move_to: Path | None = None
+        self._cache = pixmap_cache
+        self._move_to = start_move_to
         self._image_path: Path
         self._image: Image
 
@@ -77,14 +80,16 @@ class ActionButtons(QWidget):
                 self
             )
 
-            is_accepted = bool(new_filename_dialog.exec())
+            exec_result = new_filename_dialog.exec()
 
-            if not is_accepted or new_filename_dialog.new_filepath is None:
+            if exec_result != QDialog.DialogCode.Accepted or \
+                new_filename_dialog.new_filepath is None:
                 return
 
             destination_path = new_filename_dialog.new_filepath
 
         shutil.move(self._image_path, destination_path)
+        self._cache.update_path(self._image_path, destination_path)
 
         self._image.path = Image.path_formatter(destination_path)
         session.commit()
@@ -103,6 +108,7 @@ class ActionButtons(QWidget):
 
         send_to_trash(to_trash)
         session.delete(self._image)
+        self._cache.delete(to_trash)
         session.commit()
 
         self._viewer.clear_and_switch()

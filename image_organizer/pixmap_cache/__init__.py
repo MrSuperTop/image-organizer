@@ -193,6 +193,14 @@ class PixmapCache:
         del to_delete[index]
         return True
 
+    def update_path(self, key: Key, new_path: Path) -> None:
+        all_entries = self.get(key)
+        if all_entries is None:
+            return
+
+        for entry in all_entries:
+            entry.image_path = new_path
+
     @property
     def size_kbytes(self) -> float:
         return self._size / 1024

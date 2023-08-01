@@ -27,6 +27,8 @@ if typing.TYPE_CHECKING:
 
 # TODO: Sort the tags in the order of popularity
 # TODO: use QListWidgetItem.addData to bind the Tag objects
+# TODO: Unselect tags as soon as "next" is clicked
+
 class TagsList(EntryList):
     new_tag_added = pyqtSignal(str)
     tag_removed = pyqtSignal(str)

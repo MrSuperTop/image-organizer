@@ -43,6 +43,8 @@ class InfoLabels(QWidget):
 
     def update_labels(self, changed_data: ImageChangedData) -> None:
         formatted_path = changed_data.image.path
+
+        # TODO: Add a "loaded in X s" when the image was not cached
         cached_string = '(cached)' if changed_data.is_cached else None
         cache_size = 'Cache size: {kbytes:.2f} KBytes ({mbytes:.2f} MBytes)'.format(
             kbytes=self.cache.size_kbytes,

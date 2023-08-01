@@ -10,6 +10,7 @@ from image_organizer.widgets.viewer.tags_list import TagsList
 from ui.folder_viewer import FolderViewer
 from ui.my_splitter import MySplitter
 
+# TODO: Error message, when the image could no be loaded
 
 class Viewer(FolderViewer):
     def __init__(
@@ -51,7 +52,9 @@ class Viewer(FolderViewer):
         folder_viewer_layout = super().gui()
 
         self.action_buttons = ActionButtons(
-            self
+            self,
+            self._cache,
+            start_move_to
         )
 
         folder_viewer_layout.addWidget(self.action_buttons)

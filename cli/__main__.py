@@ -67,6 +67,7 @@ if __name__ == "__main__":
             try:
                 runner.run(main(app))
             finally:
+                app.closeAllWindows()
                 runner.close()
     else:
         qasync.run(main(app)) # type: ignore

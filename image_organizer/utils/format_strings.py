@@ -15,7 +15,7 @@ def format_strings(
 ) -> str:
     lines: list[str] = []
     for item in strings:
-        if item is None:
+        if item is None or not item:
             continue
 
         if isinstance(item, str):

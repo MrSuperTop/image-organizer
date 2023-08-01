@@ -7,7 +7,7 @@ from PyQt6.QtGui import QPixmap
 from image_organizer.image_utils.load_and_resize import Dimentions
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass()
 class CacheEntry:
     pixmap: QPixmap
     dimentions: Dimentions

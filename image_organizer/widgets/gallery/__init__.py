@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy import select, true
+from sqlalchemy import delete, select, true
 
 from image_organizer.db import session
 from image_organizer.db.models.image import Image
@@ -110,7 +110,20 @@ class Gallery(QWidget):
                 .join(Tag, Tag.image_id == Image.id) \
                 .where(Tag.name == tag_name, Tag.is_selected == true())
 
-        self.images: Sequence[Image] = session.scalars(images_query).unique().all()
+        images: Sequence[Image] = session.scalars(images_query).unique().all()
+        to_delete_ids: list[int] = []
+        filtered_images: list[Image] = []
+        for image in images:
+            if not image.format_path().exists():
+                to_delete_ids.append(image.id)
+                continue
+
+            filtered_images.append(image)
+
+        delete_not_existent_query = delete(Image).where(Image.id.in_(to_delete_ids))
+        session.execute(delete_not_existent_query)
+
+        self.images = filtered_images
 
         # TODO: Start reusing the old containers and layouts, encapsulate the grid in a custom QLayout component + make resizable
         for container in self._image_containers:
